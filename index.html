@@ -11,6 +11,7 @@
 <title>PulseStore</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 :root{
   --bg:#f7f4ef;--surface:#fff;--surface2:#f0ede6;
@@ -230,6 +231,25 @@ body{display:flex;flex-direction:column;max-width:480px;margin:0 auto;min-height
 </head>
 <body>
 
+<!-- TELA DE LOGIN -->
+<div id="tela-login" style="display:flex;position:fixed;inset:0;z-index:99999;background:#1a1410;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px">
+  <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#f7f4ef;letter-spacing:-.5px;margin-bottom:6px">PulseStore</div>
+  <div style="font-size:13px;color:rgba(247,244,239,.4);margin-bottom:40px">Faça login para continuar</div>
+  <div style="width:100%;max-width:340px;display:flex;flex-direction:column;gap:12px">
+    <input id="login-user" type="text" placeholder="Usuário" autocomplete="username"
+      style="width:100%;padding:14px 16px;font-size:16px;font-family:'DM Sans',sans-serif;border:1px solid rgba(247,244,239,.15);border-radius:12px;background:rgba(247,244,239,.08);color:#f7f4ef;outline:none"
+      onkeydown="if(event.key==='Enter')document.getElementById('login-senha').focus()">
+    <input id="login-senha" type="password" placeholder="Senha" autocomplete="current-password"
+      style="width:100%;padding:14px 16px;font-size:16px;font-family:'DM Sans',sans-serif;border:1px solid rgba(247,244,239,.15);border-radius:12px;background:rgba(247,244,239,.08);color:#f7f4ef;outline:none"
+      onkeydown="if(event.key==='Enter')entrar()">
+    <button onclick="entrar()" id="btn-entrar"
+      style="width:100%;padding:14px;font-family:'Syne',sans-serif;font-size:16px;font-weight:700;background:#c8501a;color:#fff;border:none;border-radius:12px;cursor:pointer;margin-top:4px">
+      Entrar
+    </button>
+    <div id="login-erro" style="display:none;text-align:center;font-size:13px;color:#f87171;margin-top:4px"></div>
+  </div>
+</div>
+
 <div class="header">
   <h1>PulseStore</h1>
   <div class="hdr-totais" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0">
@@ -391,6 +411,11 @@ body{display:flex;flex-direction:column;max-width:480px;margin:0 auto;min-height
     <div class="passo"><div class="passo-n">2</div><div class="passo-t"><b>iPhone Safari:</b> Compartilhar - Adicionar a tela de inicio</div></div>
     <div class="passo"><div class="passo-n">3</div><div class="passo-t">Confirme e o app vira um <b>icone na tela inicial</b></div></div>
   </div>
+  <div class="cfg-box">
+    <h3>Conta</h3>
+    <p>Sair desconecta todos os dispositivos.</p>
+    <button class="btn-cfg" style="background:#fff0f0;color:#c0392b;border:1px solid rgba(192,57,43,.2);margin-top:8px" onclick="sair()">Sair da conta</button>
+  </div>
 </div>
 
 </div>
@@ -414,18 +439,71 @@ body{display:flex;flex-direction:column;max-width:480px;margin:0 auto;min-height
 var vendas=[],contaCorrente=[],clientesCad=[],tabelaPreco=[],compras=[],loja='';
 var docAtual=null,pgtoAtual='fiado',ccFiltro='todos',vendaFiltro='todos',modalCallback=null;
 
-try{vendas=JSON.parse(localStorage.getItem('cv_vendas')||localStorage.getItem('fiado_v3')||'[]')}catch(e){}
-try{contaCorrente=JSON.parse(localStorage.getItem('cv_cc')||'[]')}catch(e){}
-try{clientesCad=JSON.parse(localStorage.getItem('cv_clientes')||'[]')}catch(e){}
-try{tabelaPreco=JSON.parse(localStorage.getItem('cv_tabela_preco')||'[]')}catch(e){}
-try{compras=JSON.parse(localStorage.getItem('cv_compras')||'[]')}catch(e){}
-try{loja=localStorage.getItem('fiado_loja')||''}catch(e){}
+// Supabase
+var _SB_URL='https://bbcayfnrpojjmbtkmtdo.supabase.co';
+var _SB_KEY='sb_publishable_Fl_c-5Lcn8gPTNJmVTsW4A_E96znh_A';
+var sb=supabase.createClient(_SB_URL,_SB_KEY);
+var _uid=null;
 
-function salvar(){try{localStorage.setItem('cv_vendas',JSON.stringify(vendas))}catch(e){}try{localStorage.setItem('cv_cc',JSON.stringify(contaCorrente))}catch(e){}atualizarHeader()}
-function salvarCompras(){try{localStorage.setItem('cv_compras',JSON.stringify(compras))}catch(e){}}
-function salvarTP(){try{localStorage.setItem('cv_tabela_preco',JSON.stringify(tabelaPreco))}catch(e){}}
-function salvarClientes(){try{localStorage.setItem('cv_clientes',JSON.stringify(clientesCad))}catch(e){}}
-function salvarLoja(){loja=document.getElementById('inp-loja').value.trim();try{localStorage.setItem('fiado_loja',loja)}catch(e){}}
+async function salvarTudo(){
+  if(!_uid)return;
+  try{
+    await sb.from('dados').upsert({
+      user_id:_uid,
+      dados:{vendas,contaCorrente,clientesCad,tabelaPreco,compras,loja,saldoBanco,MARGEM_SUGESTAO,TAXA_PRAZO}
+    },{onConflict:'user_id'});
+  }catch(e){}
+}
+
+function salvar(){salvarTudo();atualizarHeader()}
+function salvarCompras(){salvarTudo()}
+function salvarTP(){salvarTudo()}
+function salvarClientes(){salvarTudo()}
+function salvarLoja(){loja=document.getElementById('inp-loja').value.trim();salvarTudo()}
+
+async function carregarDados(){
+  if(!_uid)return;
+  try{
+    var r=await sb.from('dados').select('dados').eq('user_id',_uid).single();
+    if(r.data&&r.data.dados){
+      var d=r.data.dados;
+      if(d.vendas)vendas=d.vendas;
+      if(d.contaCorrente)contaCorrente=d.contaCorrente;
+      if(d.clientesCad)clientesCad=d.clientesCad;
+      if(d.tabelaPreco)tabelaPreco=d.tabelaPreco;
+      if(d.compras)compras=d.compras;
+      if(d.loja)loja=d.loja;
+      if(d.saldoBanco!=null)saldoBanco=d.saldoBanco;
+      if(d.MARGEM_SUGESTAO!=null)MARGEM_SUGESTAO=d.MARGEM_SUGESTAO;
+      if(d.TAXA_PRAZO!=null)TAXA_PRAZO=d.TAXA_PRAZO;
+    }
+  }catch(e){}
+}
+
+async function entrar(){
+  var user=document.getElementById('login-user').value.trim();
+  var senha=document.getElementById('login-senha').value;
+  var erroEl=document.getElementById('login-erro');
+  var btn=document.getElementById('btn-entrar');
+  erroEl.style.display='none';
+  btn.textContent='Entrando...';btn.disabled=true;
+  var r=await sb.auth.signInWithPassword({email:user+'@pulsestore.app',password:senha});
+  btn.textContent='Entrar';btn.disabled=false;
+  if(r.error){erroEl.textContent='Usuário ou senha incorretos';erroEl.style.display='block';return;}
+  _uid=r.data.user.id;
+  await carregarDados();
+  document.getElementById('tela-login').style.display='none';
+  document.getElementById('inp-loja').value=loja;
+  atualizarHeader();renderClientesCad();
+}
+
+async function sair(){
+  if(!confirm('Sair da conta?'))return;
+  await sb.auth.signOut();
+  _uid=null;vendas=[];contaCorrente=[];clientesCad=[];tabelaPreco=[];compras=[];loja='';
+  saldoBanco=0;MARGEM_SUGESTAO=40;TAXA_PRAZO=0.05;
+  document.getElementById('tela-login').style.display='flex';
+}
 
 function toast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show')},2400)}
 function m(v){return'R$ '+Number(v||0).toFixed(2).replace('.',',')}
@@ -753,14 +831,14 @@ function renderCC(){
 }
 
 // HEADER
-var saldoBanco=parseFloat(localStorage.getItem('cv_banco')||'0');
+var saldoBanco=0;
 function editarBanco(){
   abrirModal('Saldo do Banco','Informe o saldo atual da conta',
     '<div class="campo"><label>Saldo (R$)</label><input id="inp-banco" type="number" step="0.01" value="'+saldoBanco.toFixed(2)+'" style="width:100%;padding:9px 11px;font-size:18px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);outline:none;font-family:var(--fb)"></div>',
     'Salvar',function(){
       var v=parseFloat(document.getElementById('inp-banco').value)||0;
       saldoBanco=v;
-      try{localStorage.setItem('cv_banco',v)}catch(e){}
+      salvarTudo();
       atualizarHeader();
     },'verde');
 }
@@ -812,8 +890,8 @@ function atualizarHeader(){
 }
 
 // TABELA DE PRECO
-var MARGEM_SUGESTAO=parseFloat(localStorage.getItem('tp_margem')||'40');
-var TAXA_PRAZO=parseFloat(localStorage.getItem('tp_taxa')||'5')/100;
+var MARGEM_SUGESTAO=40;
+var TAXA_PRAZO=0.05;
 
 function roundUp5(v){return Math.ceil(v/5)*5}
 function calcTPprod(custo,vista,margemProd){
@@ -828,8 +906,8 @@ function calcTPprod(custo,vista,margemProd){
 function atualizarConfigTP(){
   var mg=parseFloat(document.getElementById('cfg-margem').value);
   var tx=parseFloat(document.getElementById('cfg-taxa').value);
-  if(!isNaN(mg)){MARGEM_SUGESTAO=mg;localStorage.setItem('tp_margem',mg)}
-  if(!isNaN(tx)){TAXA_PRAZO=tx/100;localStorage.setItem('tp_taxa',tx);renderTP();}
+  if(!isNaN(mg)){MARGEM_SUGESTAO=mg;salvarTudo()}
+  if(!isNaN(tx)){TAXA_PRAZO=tx/100;salvarTudo();renderTP();}
 }
 function calcPreviewTP(){
   var custo=parseFloat(document.getElementById('tp-custo').value)||0;
@@ -1278,7 +1356,7 @@ function importarBackup(event){
       var d=JSON.parse(e.target.result);
       if(confirm('Restaurar backup? Dados atuais serao substituidos.')){
         vendas=d.vendas||[];contaCorrente=d.contaCorrente||[];clientesCad=d.clientesCad||[];tabelaPreco=d.tabelaPreco||[];if(d.loja)loja=d.loja;
-        salvar();salvarClientes();salvarTP();try{localStorage.setItem('fiado_loja',loja)}catch(ex){}
+        salvar();salvarClientes();salvarTP();
         renderFiado();trocarTab('fiado');toast('Backup restaurado!');
       }
     }catch(err){alert('Arquivo invalido.')}
@@ -1347,8 +1425,17 @@ function baixar(canvas,nome){var a=document.createElement('a');a.download=nome;a
 
 // INIT
 document.getElementById('inp-data').value=dataHoje();
-document.getElementById('inp-loja').value=loja;
-atualizarHeader();renderClientesCad();
+sb.auth.getSession().then(function(r){
+  var session=r.data&&r.data.session;
+  if(session){
+    _uid=session.user.id;
+    carregarDados().then(function(){
+      document.getElementById('tela-login').style.display='none';
+      document.getElementById('inp-loja').value=loja;
+      atualizarHeader();renderClientesCad();
+    });
+  }
+});
 </script>
 </body>
 </html>
