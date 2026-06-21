@@ -450,7 +450,7 @@ async function salvarTudo(){
   try{
     await sb.from('dados').upsert({
       user_id:_uid,
-      dados:{vendas,contaCorrente,clientesCad,tabelaPreco,compras,loja,saldoBanco,MARGEM_SUGESTAO,TAXA_PRAZO}
+      payload:{vendas,contaCorrente,clientesCad,tabelaPreco,compras,loja,saldoBanco,MARGEM_SUGESTAO,TAXA_PRAZO}
     },{onConflict:'user_id'});
   }catch(e){}
 }
@@ -464,9 +464,9 @@ function salvarLoja(){loja=document.getElementById('inp-loja').value.trim();salv
 async function carregarDados(){
   if(!_uid)return;
   try{
-    var r=await sb.from('dados').select('dados').eq('user_id',_uid).single();
-    if(r.data&&r.data.dados){
-      var d=r.data.dados;
+    var r=await sb.from('dados').select('payload').eq('user_id',_uid).single();
+    if(r.data&&r.data.payload){
+      var d=r.data.payload;
       if(d.vendas)vendas=d.vendas;
       if(d.contaCorrente)contaCorrente=d.contaCorrente;
       if(d.clientesCad)clientesCad=d.clientesCad;
