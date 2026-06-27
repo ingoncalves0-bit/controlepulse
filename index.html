@@ -384,7 +384,7 @@ body{display:flex;flex-direction:column;max-width:480px;margin:0 auto;min-height
       <div class="campo"><label>Custo (R$)</label><input type="number" id="tp-custo" placeholder="0,00" min="0" step="0.01" inputmode="decimal" oninput="calcPreviewTP()"></div>
       <div class="campo"><label>Margem (%)</label><input type="number" id="tp-margem-prod" step="0.1" min="0" max="99" inputmode="decimal" oninput="calcPreviewTP()"></div>
     </div>
-    <div class="campo"><label>Preco Vista (R$) <span style="font-size:10px;color:var(--text3)">auto — ou sobrescreva</span></label><input type="number" id="tp-preco" placeholder="0,00" min="0" step="1" inputmode="decimal" oninput="calcPreviewTP()"></div>
+    <div class="campo"><label>Preco Vista (R$) <span style="font-size:10px;color:var(--text3)">auto — ou sobrescreva</span></label><input type="number" id="tp-preco" placeholder="0,00" min="0" step="1" inputmode="decimal" oninput="calcPreviewTP(true)"></div>
     <div id="tp-preview" style="display:none;background:var(--surface2);border-radius:var(--rs);padding:10px 12px;margin-top:6px;font-size:13px;line-height:1.9"></div>
     <button class="btn-reg" onclick="adicionarTP()" style="margin-top:10px">Adicionar produto</button>
   </div>
@@ -909,11 +909,11 @@ function atualizarConfigTP(){
   if(!isNaN(mg)){MARGEM_SUGESTAO=mg;salvarTudo()}
   if(!isNaN(tx)){TAXA_PRAZO=tx/100;salvarTudo();renderTP();}
 }
-function calcPreviewTP(){
+function calcPreviewTP(manualPreco){
   var custo=parseFloat(document.getElementById('tp-custo').value)||0;
   var mg=parseFloat(document.getElementById('tp-margem-prod').value)||MARGEM_SUGESTAO;
   var vistaInput=parseFloat(document.getElementById('tp-preco').value)||0;
-  if(custo>0&&!vistaInput&&mg>0){
+  if(custo>0&&mg>0&&!manualPreco){
     var av=roundUp5(custo/(1-mg/100));
     document.getElementById('tp-preco').value=av;
     vistaInput=av;
