@@ -1132,7 +1132,10 @@ function gerarTabelaVendas(){
       '<td style="'+tdSt+';font-family:\'Syne\',sans-serif;font-weight:700">'+esc(p.nome)+'</td>'+
       '<td style="'+tdSt+';text-align:right;font-weight:700;color:#2a7a4f">'+m(c.vista)+'</td>'+
       '<td style="'+tdSt+';text-align:right;font-weight:700;color:#1a5fa0">'+m(c.prazo1)+'</td>'+
-      '<td style="'+tdSt+';text-align:right;font-weight:700;color:#a07800">'+m(c.prazo2parc)+'/x</td>'+
+      '<td style="'+tdSt+';text-align:right">'+
+        '<div style="font-weight:700;color:#a07800">2x '+m(c.prazo2parc)+'</div>'+
+        '<div style="font-size:11px;color:#888;margin-top:1px">total '+m(c.prazo2total)+'</div>'+
+      '</td>'+
     '</tr>';
   }).join('');
   document.getElementById('tv-conteudo').innerHTML=
@@ -1141,7 +1144,7 @@ function gerarTabelaVendas(){
         '<th style="'+thSt+';text-align:left">Produto</th>'+
         '<th style="'+thSt+';text-align:right">À Vista</th>'+
         '<th style="'+thSt+';text-align:right">1x Prazo</th>'+
-        '<th style="'+thSt+';text-align:right">2x /parc</th>'+
+        '<th style="'+thSt+';text-align:right">Parcelado 2x</th>'+
       '</tr></thead>'+
       '<tbody>'+rows+'</tbody>'+
     '</table>';
