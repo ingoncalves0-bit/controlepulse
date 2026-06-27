@@ -535,6 +535,7 @@ async function sair(){
 function toast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show')},2400)}
 function m(v){return'R$ '+Number(v||0).toFixed(2).replace('.',',')}
 function fd(d){if(!d)return'';var p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0]}
+function esc(s){return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function hoje(){return new Date().toLocaleDateString('pt-BR')}
 function dataHoje(){return new Date().toISOString().split('T')[0]}
 
@@ -633,7 +634,7 @@ function renderClientesCad(){
   var lista=document.getElementById('lista-clientes-cad');
   if(!clientesCad.length){lista.innerHTML='<div class="vazio">Nenhum cliente cadastrado.<br>Adicione acima!</div>';return}
   lista.innerHTML=clientesCad.map(function(c){
-    return '<div class="cad-cli-card"><div><div class="cad-cli-nome">'+c.nome+'</div><div class="cad-cli-meta">'+(c.tel||'Sem telefone')+(c.end?' &bull; '+c.end:'')+'</div></div><div style="display:flex;gap:6px"><button class="btn-estq" onclick="editarCliente('+c.id+')">Editar</button><button class="btn-estq danger" onclick="excluirCliente('+c.id+')">Excluir</button></div></div>';
+    return '<div class="cad-cli-card"><div><div class="cad-cli-nome">'+esc(c.nome)+'</div><div class="cad-cli-meta">'+(esc(c.tel)||'Sem telefone')+(c.end?' &bull; '+esc(c.end):'')+'</div></div><div style="display:flex;gap:6px"><button class="btn-estq" onclick="editarCliente('+c.id+')">Editar</button><button class="btn-estq danger" onclick="excluirCliente('+c.id+')">Excluir</button></div></div>';
   }).join('');
 }
 
@@ -819,7 +820,7 @@ function renderDiario(){
     var tp=v.pgto||'fiado';
     items.push('<div class="diario-row">'+
       '<span class="diario-data">'+dmStr(v.data)+'</span>'+
-      '<span class="diario-nome">'+v.nome+'</span>'+
+      '<span class="diario-nome">'+esc(v.nome)+'</span>'+
       '<span class="diario-valor">'+m(v.valor)+'</span>'+
       '<span class="cc-tipo '+(pColors[tp]||'cc-fiad')+'">'+(pLabels[tp]||tp)+'</span>'+
     '</div>');
@@ -864,7 +865,7 @@ function renderVendas(){
         var tp=v.pgto||'fiado';
         var pgc=v.parcelas.filter(function(p){return p.pago}).length;
         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 16px 8px 40px;border-bottom:1px solid var(--border2)">'+
-          '<div><div style="font-size:13px;font-weight:500">'+v.desc+'</div>'+
+          '<div><div style="font-size:13px;font-weight:500">'+esc(v.desc)+'</div>'+
           '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+fd(v.data)+' &bull; <span class="cc-tipo '+(tp==='cartao'?'cc-car':tp==='dinheiro'?'cc-din':'cc-fiad')+'">'+(pLabels[tp]||tp)+'</span>'+(tp==='fiado'?' &bull; '+pgc+'/'+v.parcelas.length+' pago':'')+'</div></div>'+
           '<div style="font-size:13px;font-weight:700;color:var(--success)">'+m(v.valor)+'</div>'+
         '</div>';
@@ -910,7 +911,7 @@ function renderCC(){
   var labels={dinheiro:'Dinheiro',cartao:'Cartao',fiado:'Fiado rec.'};
   lista.innerHTML=filtrados.slice().reverse().map(function(c){
     var tc=c.tipo==='cartao'?'cc-car':c.tipo==='dinheiro'?'cc-din':'cc-fiad';
-    return '<div class="cc-card"><div><div class="cc-desc">'+c.desc+'</div><div class="cc-meta">'+fd(c.data)+'</div></div><div style="text-align:right"><div class="cc-tipo '+tc+'">'+(labels[c.tipo]||c.tipo)+'</div><div style="font-family:var(--fh);font-size:15px;font-weight:700;color:var(--success)">'+m(c.valor)+'</div></div></div>';
+    return '<div class="cc-card"><div><div class="cc-desc">'+esc(c.desc)+'</div><div class="cc-meta">'+fd(c.data)+'</div></div><div style="text-align:right"><div class="cc-tipo '+tc+'">'+(labels[c.tipo]||c.tipo)+'</div><div style="font-family:var(--fh);font-size:15px;font-weight:700;color:var(--success)">'+m(c.valor)+'</div></div></div>';
   }).join('');
 }
 
@@ -1045,7 +1046,7 @@ function renderTP(){
     var c=calcTPprod(p.custo,p.vista,mg);
     return '<div class="tp-card" style="flex-direction:column;align-items:stretch;gap:0;padding:0;overflow:hidden">'+
       '<div onclick="toggleTP('+p.id+')" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;gap:8px">'+
-        '<div style="font-family:var(--fh);font-size:15px;font-weight:700;flex:1">'+p.nome+'</div>'+
+        '<div style="font-family:var(--fh);font-size:15px;font-weight:700;flex:1">'+esc(p.nome)+'</div>'+
         '<div style="font-size:12px;color:var(--success);font-weight:700;white-space:nowrap">'+m(c.vista)+'</div>'+
         '<div id="tp-arrow-'+p.id+'" style="font-size:11px;color:var(--text3);transition:transform .2s">▼</div>'+
       '</div>'+
@@ -1103,7 +1104,7 @@ function gerarTabelaVendas(){
     var c=calcTPprod(p.custo,p.vista,mg);
     var bg=i%2===0?'#fff':'#f7f4ef';
     return '<tr style="background:'+bg+'">'+
-      '<td style="'+tdSt+';font-family:\'Syne\',sans-serif;font-weight:700">'+p.nome+'</td>'+
+      '<td style="'+tdSt+';font-family:\'Syne\',sans-serif;font-weight:700">'+esc(p.nome)+'</td>'+
       '<td style="'+tdSt+';text-align:right;font-weight:700;color:#2a7a4f">'+m(c.vista)+'</td>'+
       '<td style="'+tdSt+';text-align:right;font-weight:700;color:#1a5fa0">'+m(c.prazo1)+'</td>'+
       '<td style="'+tdSt+';text-align:right;font-weight:700;color:#a07800">'+m(c.prazo2parc)+'/x</td>'+
@@ -1289,8 +1290,8 @@ function renderCompras(){
       '<div class="cli-body" id="body-cmp-hist">'+
         pagas.map(function(c){
           return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border2)">'+
-            '<div><div style="font-size:13px;font-weight:500">'+c.fornecedor+'</div>'+
-            '<div style="font-size:11px;color:var(--text3)">'+fd(c.data)+' &bull; '+(pgtoLabels[c.pgto]||c.pgto)+(c.obs?' &bull; <b>'+c.obs+'</b>':'')+'</div></div>'+
+            '<div><div style="font-size:13px;font-weight:500">'+esc(c.fornecedor)+'</div>'+
+            '<div style="font-size:11px;color:var(--text3)">'+fd(c.data)+' &bull; '+(pgtoLabels[c.pgto]||esc(c.pgto))+(c.obs?' &bull; <b>'+esc(c.obs)+'</b>':'')+'</div></div>'+
             '<div style="display:flex;align-items:center;gap:8px">'+
               '<span style="font-size:13px;font-weight:700;color:var(--text3)">'+m(c.valor)+'</span>'+
               '<button class="btn-parc" onclick="excluirCompra('+c.id+')" style="font-size:11px;padding:4px 7px;color:var(--danger)">✕</button>'+
@@ -1427,7 +1428,7 @@ function renderContasReceber(){
       var vcid='rc'+mid+nome.replace(/[^a-z0-9]/gi,'_');
       var parcLinhas=dados.parcelas.map(function(p){
         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 16px 8px 36px;border-bottom:1px solid var(--border2)">'+
-          '<div><div style="font-size:12px;font-weight:500">'+p.desc+'</div>'+
+          '<div><div style="font-size:12px;font-weight:500">'+esc(p.desc)+'</div>'+
           '<div style="font-size:11px;color:var(--text3)">'+p.num+'a/'+p.total+' &bull; venc. '+fd(p.vencimento)+'</div></div>'+
           '<div style="display:flex;align-items:center;gap:8px">'+
             '<span style="font-size:13px;font-weight:700;color:var(--accent)">'+m(p.saldo)+'</span>'+
