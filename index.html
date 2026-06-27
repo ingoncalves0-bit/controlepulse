@@ -1023,33 +1023,39 @@ function renderTP(){
   if(mpInput&&!mpInput.value)mpInput.value=MARGEM_SUGESTAO.toFixed(1);
   var lista=document.getElementById('lista-tp');
   if(!tabelaPreco.length){lista.innerHTML='<div class="vazio">Nenhum produto cadastrado.<br>Adicione acima!</div>';return}
-  var stIn='width:100%;padding:4px 5px;font-size:12px;font-family:var(--fb);border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);outline:none;-webkit-appearance:none;text-align:right';
-  var stNome='width:100%;padding:4px 5px;font-size:12px;font-family:var(--fh);font-weight:700;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);outline:none;-webkit-appearance:none';
-  var cols='grid-template-columns:1fr 52px 62px 60px 70px 48px 26px';
-  var hdr='<div style="display:grid;'+cols+';gap:4px;padding:7px 6px;background:var(--surface2);border-bottom:2px solid var(--border)">'+
-    '<div style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Produto</div>'+
-    '<div style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;text-align:right">Custo</div>'+
-    '<div style="font-size:9px;font-weight:700;color:var(--success);text-transform:uppercase;letter-spacing:.6px;text-align:right">Vista</div>'+
-    '<div style="font-size:9px;font-weight:700;color:var(--info);text-transform:uppercase;letter-spacing:.6px;text-align:right">1x</div>'+
-    '<div style="font-size:9px;font-weight:700;color:var(--warning);text-transform:uppercase;letter-spacing:.6px;text-align:right">2x /parc</div>'+
-    '<div style="font-size:9px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;text-align:right">Mg%</div>'+
-    '<div></div>'+
-  '</div>';
+  var stTh='padding:7px 6px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;border-bottom:2px solid var(--border)';
+  var stTd='padding:4px 4px;vertical-align:middle;border-bottom:1px solid var(--border2)';
+  var stIn='width:100%;padding:4px 5px;font-size:12px;font-family:var(--fb);border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--text);outline:none;-webkit-appearance:none;text-align:right;min-width:0';
+  var stNome='width:100%;padding:4px 5px;font-size:12px;font-family:var(--fh);font-weight:700;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--text);outline:none;-webkit-appearance:none;min-width:0';
   var rows=tabelaPreco.map(function(p,i){
     var mg=p.margem!=null?p.margem:MARGEM_SUGESTAO;
     var c=calcTPprod(p.custo,p.vista,mg);
-    var bg=i%2===0?'background:var(--surface)':'background:var(--surface2)';
-    return '<div style="display:grid;'+cols+';gap:4px;padding:5px 6px;border-bottom:1px solid var(--border2);align-items:center;'+bg+'">'+
-      '<input type="text" value="'+p.nome.replace(/"/g,'&quot;')+'" style="'+stNome+'" onblur="salvarCampoTP('+p.id+',\'nome\',this.value)">'+
-      '<input type="number" value="'+p.custo+'" step="0.01" inputmode="decimal" style="'+stIn+'" onchange="salvarCampoTP('+p.id+',\'custo\',this.value)">'+
-      '<input type="number" value="'+c.vista+'" step="5" inputmode="decimal" style="'+stIn+';color:var(--success);font-weight:700" onchange="salvarCampoTP('+p.id+',\'vista\',this.value)">'+
-      '<div style="font-size:13px;font-weight:700;color:var(--info);text-align:right">'+m(c.prazo1)+'</div>'+
-      '<div style="font-size:12px;font-weight:700;color:var(--warning);text-align:right">'+m(c.prazo2parc)+'</div>'+
-      '<input type="number" value="'+mg.toFixed(1)+'" step="0.5" min="0" max="99" inputmode="decimal" style="'+stIn+';color:var(--accent);font-weight:700" onchange="salvarCampoTP('+p.id+',\'margem\',this.value)">'+
-      '<button style="background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;padding:2px;line-height:1" onclick="excluirTP('+p.id+')">✕</button>'+
-    '</div>';
+    var bg=i%2===0?'var(--surface)':'var(--surface2)';
+    return '<tr style="background:'+bg+'">'+
+      '<td style="'+stTd+';min-width:90px"><input type="text" value="'+p.nome.replace(/"/g,'&quot;')+'" style="'+stNome+'" onblur="salvarCampoTP('+p.id+',\'nome\',this.value)"></td>'+
+      '<td style="'+stTd+';width:60px"><input type="number" value="'+p.custo+'" step="0.01" inputmode="decimal" style="'+stIn+'" onchange="salvarCampoTP('+p.id+',\'custo\',this.value)"></td>'+
+      '<td style="'+stTd+';width:62px"><input type="number" value="'+c.vista+'" step="5" inputmode="decimal" style="'+stIn+';color:var(--success);font-weight:700" onchange="salvarCampoTP('+p.id+',\'vista\',this.value)"></td>'+
+      '<td style="'+stTd+';width:58px;text-align:right;font-size:13px;font-weight:700;color:var(--info);padding-right:6px">'+m(c.prazo1)+'</td>'+
+      '<td style="'+stTd+';width:68px;text-align:right;font-size:12px;font-weight:700;color:var(--warning);padding-right:6px">'+m(c.prazo2parc)+'</td>'+
+      '<td style="'+stTd+';width:50px"><input type="number" value="'+mg.toFixed(1)+'" step="0.5" min="0" max="99" inputmode="decimal" style="'+stIn+';color:var(--accent);font-weight:700" onchange="salvarCampoTP('+p.id+',\'margem\',this.value)"></td>'+
+      '<td style="'+stTd+';width:26px;text-align:center"><button style="background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;padding:2px;line-height:1" onclick="excluirTP('+p.id+')">✕</button></td>'+
+    '</tr>';
   }).join('');
-  lista.innerHTML='<div style="border:1px solid var(--border);border-radius:var(--rs);overflow:hidden">'+hdr+rows+'</div>';
+  lista.innerHTML='<div style="border:1px solid var(--border);border-radius:var(--rs);overflow:hidden;overflow-x:auto">'+
+    '<table style="width:100%;border-collapse:collapse;table-layout:fixed">'+
+      '<colgroup><col><col style="width:60px"><col style="width:62px"><col style="width:58px"><col style="width:68px"><col style="width:50px"><col style="width:26px"></colgroup>'+
+      '<thead><tr style="background:var(--surface2)">'+
+        '<th style="'+stTh+';color:var(--text3);text-align:left">Produto</th>'+
+        '<th style="'+stTh+';color:var(--text3);text-align:right">Custo</th>'+
+        '<th style="'+stTh+';color:var(--success);text-align:right">Vista</th>'+
+        '<th style="'+stTh+';color:var(--info);text-align:right">1x</th>'+
+        '<th style="'+stTh+';color:var(--warning);text-align:right">2x/parc</th>'+
+        '<th style="'+stTh+';color:var(--accent);text-align:right">Mg%</th>'+
+        '<th style="'+stTh+'"></th>'+
+      '</tr></thead>'+
+      '<tbody>'+rows+'</tbody>'+
+    '</table>'+
+  '</div>';
 }
 
 // COMPRAS E CONTAS A PAGAR
