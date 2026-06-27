@@ -1114,7 +1114,7 @@ function novaCompra(){
       var parcelas=[];
       for(var i=0;i<nParc;i++){
         var vencBase=new Date((data||dataHoje())+'T12:00:00');
-        vencBase.setMonth(vencBase.getMonth()+i);
+        vencBase.setMonth(vencBase.getMonth()+i+1);
         parcelas.push({num:i+1,valor:valorParc,pago:false,dataPgto:null,vencimento:vencBase.toISOString().split('T')[0]});
       }
       compras.push({id:Date.now(),data:data||dataHoje(),fornecedor:forn,valor:valor,pgto:pgto,obs:obs,parcelas:parcelas});
