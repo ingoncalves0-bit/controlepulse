@@ -911,10 +911,11 @@ function atualizarConfigTP(){
 }
 function calcPreviewTP(manualPreco){
   var custo=parseFloat(document.getElementById('tp-custo').value)||0;
-  var mg=parseFloat(document.getElementById('tp-margem-prod').value)||MARGEM_SUGESTAO;
+  var mgRaw=parseFloat(document.getElementById('tp-margem-prod').value);
+  var mg=isNaN(mgRaw)?MARGEM_SUGESTAO:mgRaw;
   var vistaInput=parseFloat(document.getElementById('tp-preco').value)||0;
-  if(custo>0&&mg>0&&!manualPreco){
-    var av=roundUp5(custo/(1-mg/100));
+  if(custo>0&&!manualPreco){
+    var av=mg>0&&mg<100?roundUp5(custo/(1-mg/100)):custo;
     document.getElementById('tp-preco').value=av;
     vistaInput=av;
   }
@@ -930,18 +931,20 @@ function calcPreviewTP(manualPreco){
 function adicionarTP(){
   var nome=document.getElementById('tp-nome').value.trim();
   var custo=parseFloat(document.getElementById('tp-custo').value)||0;
-  var mg=parseFloat(document.getElementById('tp-margem-prod').value)||MARGEM_SUGESTAO;
+  var mgRaw=parseFloat(document.getElementById('tp-margem-prod').value);
+  var mg=isNaN(mgRaw)?MARGEM_SUGESTAO:mgRaw;
   var vistaInput=parseFloat(document.getElementById('tp-preco').value)||0;
   if(!nome){toast('Informe o nome do produto');return}
   if(!custo&&!vistaInput){toast('Informe ao menos o custo');return}
   var c=calcTPprod(custo,vistaInput>0?vistaInput:0,mg);
   tabelaPreco.push({id:Date.now(),nome:nome,custo:custo,vista:c.vista,margem:mg});
-  salvarTP();renderTP();
+  salvarTP();
   document.getElementById('tp-nome').value='';
   document.getElementById('tp-custo').value='';
   document.getElementById('tp-margem-prod').value='';
   document.getElementById('tp-preco').value='';
   document.getElementById('tp-preview').style.display='none';
+  renderTP();
   toast('Produto adicionado!');
 }
 function excluirTP(id){
