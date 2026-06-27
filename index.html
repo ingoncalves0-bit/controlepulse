@@ -1058,7 +1058,18 @@ function renderTP(){
           '<input type="text" value="'+p.nome.replace(/"/g,'&quot;')+'" style="'+stIn+';font-weight:700;font-family:var(--fh);flex:1;font-size:15px" onblur="salvarCampoTP('+p.id+',\'nome\',this.value)">'+
           '<button class="btn-estq danger" onclick="excluirTP('+p.id+')">✕</button>'+
         '</div>'+
-        '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+          '<div style="background:var(--info-bg);border-radius:var(--rs);padding:9px 11px">'+
+            '<div style="font-size:9px;color:var(--info);margin-bottom:3px;font-weight:700">1x PRAZO</div>'+
+            '<div style="font-size:16px;font-weight:700;color:var(--info)">'+m(c.prazo1)+'</div>'+
+          '</div>'+
+          '<div style="background:var(--warning-bg);border-radius:var(--rs);padding:9px 11px">'+
+            '<div style="font-size:9px;color:var(--warning);margin-bottom:3px;font-weight:700">2x PRAZO</div>'+
+            '<div style="font-size:16px;font-weight:700;color:var(--warning)">'+m(c.prazo2parc)+'/parc</div>'+
+            '<div style="font-size:10px;color:var(--text3)">total '+m(c.prazo2total)+'</div>'+
+          '</div>'+
+        '</div>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px">'+
           '<div style="background:var(--surface2);border-radius:var(--rs);padding:8px 10px">'+
             '<div style="font-size:9px;color:var(--text3);margin-bottom:3px;font-weight:700">CUSTO</div>'+
             '<input type="number" value="'+p.custo+'" step="0.01" inputmode="decimal" style="'+stIn+';font-size:14px;font-weight:700" onchange="salvarCampoTP('+p.id+',\'custo\',this.value)">'+
@@ -1070,17 +1081,6 @@ function renderTP(){
           '<div style="background:var(--success-bg);border-radius:var(--rs);padding:8px 10px">'+
             '<div style="font-size:9px;color:var(--success);margin-bottom:3px;font-weight:700">A VISTA</div>'+
             '<input type="number" value="'+c.vista+'" step="5" inputmode="decimal" style="'+stIn+';font-size:14px;font-weight:700;color:var(--success)" onchange="salvarCampoTP('+p.id+',\'vista\',this.value)">'+
-          '</div>'+
-        '</div>'+
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">'+
-          '<div style="background:var(--info-bg);border-radius:var(--rs);padding:9px 11px">'+
-            '<div style="font-size:9px;color:var(--info);margin-bottom:3px;font-weight:700">1x PRAZO</div>'+
-            '<div style="font-size:16px;font-weight:700;color:var(--info)">'+m(c.prazo1)+'</div>'+
-          '</div>'+
-          '<div style="background:var(--warning-bg);border-radius:var(--rs);padding:9px 11px">'+
-            '<div style="font-size:9px;color:var(--warning);margin-bottom:3px;font-weight:700">2x PRAZO</div>'+
-            '<div style="font-size:16px;font-weight:700;color:var(--warning)">'+m(c.prazo2parc)+'/parc</div>'+
-            '<div style="font-size:10px;color:var(--text3)">total '+m(c.prazo2total)+'</div>'+
           '</div>'+
         '</div>'+
       '</div>'+
