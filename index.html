@@ -394,11 +394,9 @@ body{display:flex;flex-direction:column;max-width:480px;margin:0 auto;min-height
     <h3>Novo produto</h3>
     <div class="campo"><label>Nome do produto</label><input type="text" id="tp-nome" placeholder="Ex: Blusa M, Calca Jeans 42..." autocomplete="off"></div>
     <div class="row2">
-      <div class="campo"><label>Custo (R$)</label><input type="number" id="tp-custo" placeholder="0,00" min="0" step="0.01" inputmode="decimal" oninput="calcPreviewTP()"></div>
-      <div class="campo"><label>Margem (%)</label><input type="number" id="tp-margem-prod" step="0.1" min="0" max="99" inputmode="decimal" oninput="calcPreviewTP()"></div>
+      <div class="campo"><label>Custo (R$)</label><input type="number" id="tp-custo" placeholder="0,00" min="0" step="0.01" inputmode="decimal"></div>
+      <div class="campo"><label>Margem (%)</label><input type="number" id="tp-margem-prod" step="0.1" min="0" max="99" inputmode="decimal"></div>
     </div>
-    <div class="campo"><label>Preco Vista (R$) <span style="font-size:10px;color:var(--text3)">auto — ou sobrescreva</span></label><input type="number" id="tp-preco" placeholder="0,00" min="0" step="1" inputmode="decimal" oninput="calcPreviewTP(true)"></div>
-    <div id="tp-preview" style="display:none;background:var(--surface2);border-radius:var(--rs);padding:10px 12px;margin-top:6px;font-size:13px;line-height:1.9"></div>
     <button class="btn-reg" onclick="adicionarTP()" style="margin-top:10px">Adicionar produto</button>
   </div>
   <div id="lista-tp"></div>
@@ -979,41 +977,19 @@ function atualizarConfigTP(){
   if(!isNaN(mg)){MARGEM_SUGESTAO=mg;salvarTudo()}
   if(!isNaN(tx)){TAXA_PRAZO=tx/100;salvarTudo();renderTP();}
 }
-function calcPreviewTP(manualPreco){
-  var custo=parseFloat(document.getElementById('tp-custo').value)||0;
-  var mgRaw=parseFloat(document.getElementById('tp-margem-prod').value);
-  var mg=isNaN(mgRaw)?MARGEM_SUGESTAO:mgRaw;
-  var vistaInput=parseFloat(document.getElementById('tp-preco').value)||0;
-  if(custo>0&&!manualPreco){
-    var av=mg>0&&mg<100?roundUp5(custo/(1-mg/100)):custo;
-    document.getElementById('tp-preco').value=av;
-    vistaInput=av;
-  }
-  var prev=document.getElementById('tp-preview');
-  if(!custo&&!vistaInput){prev.style.display='none';return}
-  var c=calcTPprod(custo,vistaInput>0?vistaInput:0,mg);
-  prev.style.display='block';
-  prev.innerHTML=
-    '<b>Vista:</b> <span style="color:var(--success);font-weight:700">'+m(c.vista)+'</span> &nbsp; <b>Margem real:</b> <span style="color:var(--success)">'+c.margem.toFixed(1)+'%</span><br>'+
-    '<b>1x prazo:</b> <span style="color:var(--info)">'+m(c.prazo1)+'</span><br>'+
-    '<b>2x prazo:</b> <span style="color:var(--warning)">'+m(c.prazo2parc)+'/parc</span> <span style="color:var(--text3);font-size:11px">(total '+m(c.prazo2total)+')</span>';
-}
 function adicionarTP(){
   var nome=document.getElementById('tp-nome').value.trim();
   var custo=parseFloat(document.getElementById('tp-custo').value)||0;
   var mgRaw=parseFloat(document.getElementById('tp-margem-prod').value);
   var mg=isNaN(mgRaw)?MARGEM_SUGESTAO:mgRaw;
-  var vistaInput=parseFloat(document.getElementById('tp-preco').value)||0;
   if(!nome){toast('Informe o nome do produto');return}
-  if(!custo&&!vistaInput){toast('Informe ao menos o custo');return}
-  var c=calcTPprod(custo,vistaInput>0?vistaInput:0,mg);
+  if(!custo){toast('Informe o custo');return}
+  var c=calcTPprod(custo,0,mg);
   tabelaPreco.push({id:Date.now(),nome:nome,custo:custo,vista:c.vista,margem:mg});
   salvarTP();
   document.getElementById('tp-nome').value='';
   document.getElementById('tp-custo').value='';
   document.getElementById('tp-margem-prod').value='';
-  document.getElementById('tp-preco').value='';
-  document.getElementById('tp-preview').style.display='none';
   renderTP();
   toast('Produto adicionado!');
 }
@@ -1027,13 +1003,13 @@ function salvarCampoTP(id,campo,val){
   if(campo==='nome'){if(val.trim())p.nome=val.trim();}
   else if(campo==='custo'){
     p.custo=parseFloat(val)||0;
-    p.vista=p.custo>0?roundUp5(p.custo/(1-(p.margem||MARGEM_SUGESTAO)/100)):p.vista;
+    if(p.vista>0)p.margem=parseFloat(((p.vista-p.custo)/p.vista*100).toFixed(1));
+  } else if(campo==='vista'){
+    var v=parseFloat(val)||0;
+    if(v>0){p.vista=roundUp5(v);p.margem=parseFloat(((p.vista-p.custo)/p.vista*100).toFixed(1));}
   } else if(campo==='margem'){
     p.margem=parseFloat(val)||MARGEM_SUGESTAO;
     if(p.custo>0)p.vista=roundUp5(p.custo/(1-p.margem/100));
-  } else if(campo==='vista'){
-    var v=parseFloat(val)||0;
-    if(v>0)p.vista=roundUp5(v);
   }
   salvarTP();
   if(campo!=='nome')renderTP();
@@ -1047,42 +1023,33 @@ function renderTP(){
   if(mpInput&&!mpInput.value)mpInput.value=MARGEM_SUGESTAO.toFixed(1);
   var lista=document.getElementById('lista-tp');
   if(!tabelaPreco.length){lista.innerHTML='<div class="vazio">Nenhum produto cadastrado.<br>Adicione acima!</div>';return}
-  var stIn='width:100%;padding:6px 9px;font-size:14px;font-family:var(--fb);border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);outline:none;-webkit-appearance:none';
-  lista.innerHTML=tabelaPreco.map(function(p){
+  var stIn='width:100%;padding:4px 5px;font-size:12px;font-family:var(--fb);border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);outline:none;-webkit-appearance:none;text-align:right';
+  var stNome='width:100%;padding:4px 5px;font-size:12px;font-family:var(--fh);font-weight:700;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);outline:none;-webkit-appearance:none';
+  var cols='grid-template-columns:1fr 52px 62px 60px 70px 48px 26px';
+  var hdr='<div style="display:grid;'+cols+';gap:4px;padding:7px 6px;background:var(--surface2);border-bottom:2px solid var(--border)">'+
+    '<div style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Produto</div>'+
+    '<div style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;text-align:right">Custo</div>'+
+    '<div style="font-size:9px;font-weight:700;color:var(--success);text-transform:uppercase;letter-spacing:.6px;text-align:right">Vista</div>'+
+    '<div style="font-size:9px;font-weight:700;color:var(--info);text-transform:uppercase;letter-spacing:.6px;text-align:right">1x</div>'+
+    '<div style="font-size:9px;font-weight:700;color:var(--warning);text-transform:uppercase;letter-spacing:.6px;text-align:right">2x /parc</div>'+
+    '<div style="font-size:9px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;text-align:right">Mg%</div>'+
+    '<div></div>'+
+  '</div>';
+  var rows=tabelaPreco.map(function(p,i){
     var mg=p.margem!=null?p.margem:MARGEM_SUGESTAO;
     var c=calcTPprod(p.custo,p.vista,mg);
-    return '<div class="tp-card" style="flex-direction:column;align-items:stretch;gap:10px">'+
-      '<div style="display:flex;align-items:center;gap:8px">'+
-        '<input type="text" value="'+p.nome.replace(/"/g,'&quot;')+'" style="'+stIn+';font-weight:700;font-family:var(--fh);flex:1;font-size:15px" onblur="salvarCampoTP('+p.id+',\'nome\',this.value)">'+
-        '<button class="btn-estq danger" onclick="excluirTP('+p.id+')">✕</button>'+
-      '</div>'+
-      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">'+
-        '<div style="background:var(--surface2);border-radius:var(--rs);padding:8px 10px">'+
-          '<div style="font-size:9px;color:var(--text3);margin-bottom:3px;font-weight:700">CUSTO</div>'+
-          '<input type="number" value="'+p.custo+'" step="0.01" inputmode="decimal" style="'+stIn+';font-size:14px;font-weight:700" onchange="salvarCampoTP('+p.id+',\'custo\',this.value)">'+
-        '</div>'+
-        '<div style="background:var(--accent-bg);border-radius:var(--rs);padding:8px 10px">'+
-          '<div style="font-size:9px;color:var(--accent);margin-bottom:3px;font-weight:700">MARGEM %</div>'+
-          '<input type="number" value="'+mg.toFixed(1)+'" step="0.5" min="0" max="99" inputmode="decimal" style="'+stIn+';font-size:14px;font-weight:700;color:var(--accent)" onchange="salvarCampoTP('+p.id+',\'margem\',this.value)">'+
-        '</div>'+
-        '<div style="background:var(--success-bg);border-radius:var(--rs);padding:8px 10px">'+
-          '<div style="font-size:9px;color:var(--success);margin-bottom:3px;font-weight:700">A VISTA</div>'+
-          '<input type="number" value="'+c.vista+'" step="5" inputmode="decimal" style="'+stIn+';font-size:14px;font-weight:700;color:var(--success)" onchange="salvarCampoTP('+p.id+',\'vista\',this.value)">'+
-        '</div>'+
-      '</div>'+
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
-        '<div style="background:var(--info-bg);border-radius:var(--rs);padding:9px 11px">'+
-          '<div style="font-size:9px;color:var(--info);margin-bottom:3px;font-weight:700">1x PRAZO</div>'+
-          '<div style="font-size:16px;font-weight:700;color:var(--info)">'+m(c.prazo1)+'</div>'+
-        '</div>'+
-        '<div style="background:var(--warning-bg);border-radius:var(--rs);padding:9px 11px">'+
-          '<div style="font-size:9px;color:var(--warning);margin-bottom:3px;font-weight:700">2x PRAZO</div>'+
-          '<div style="font-size:16px;font-weight:700;color:var(--warning)">'+m(c.prazo2parc)+'/parc</div>'+
-          '<div style="font-size:10px;color:var(--text3)">total '+m(c.prazo2total)+'</div>'+
-        '</div>'+
-      '</div>'+
+    var bg=i%2===0?'background:var(--surface)':'background:var(--surface2)';
+    return '<div style="display:grid;'+cols+';gap:4px;padding:5px 6px;border-bottom:1px solid var(--border2);align-items:center;'+bg+'">'+
+      '<input type="text" value="'+p.nome.replace(/"/g,'&quot;')+'" style="'+stNome+'" onblur="salvarCampoTP('+p.id+',\'nome\',this.value)">'+
+      '<input type="number" value="'+p.custo+'" step="0.01" inputmode="decimal" style="'+stIn+'" onchange="salvarCampoTP('+p.id+',\'custo\',this.value)">'+
+      '<input type="number" value="'+c.vista+'" step="5" inputmode="decimal" style="'+stIn+';color:var(--success);font-weight:700" onchange="salvarCampoTP('+p.id+',\'vista\',this.value)">'+
+      '<div style="font-size:13px;font-weight:700;color:var(--info);text-align:right">'+m(c.prazo1)+'</div>'+
+      '<div style="font-size:12px;font-weight:700;color:var(--warning);text-align:right">'+m(c.prazo2parc)+'</div>'+
+      '<input type="number" value="'+mg.toFixed(1)+'" step="0.5" min="0" max="99" inputmode="decimal" style="'+stIn+';color:var(--accent);font-weight:700" onchange="salvarCampoTP('+p.id+',\'margem\',this.value)">'+
+      '<button style="background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;padding:2px;line-height:1" onclick="excluirTP('+p.id+')">✕</button>'+
     '</div>';
   }).join('');
+  lista.innerHTML='<div style="border:1px solid var(--border);border-radius:var(--rs);overflow:hidden">'+hdr+rows+'</div>';
 }
 
 // COMPRAS E CONTAS A PAGAR
