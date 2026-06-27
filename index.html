@@ -197,6 +197,15 @@ body{display:flex;flex-direction:column;max-width:480px;margin:0 auto;min-height
 .tp-margem{font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:var(--success-bg);color:var(--success);white-space:nowrap}
 .tp-acoes{display:flex;gap:6px;flex-shrink:0}
 
+/* DIARIO */
+.diario-wrap{background:var(--surface);border-radius:var(--r);overflow:hidden;border:1px solid var(--border2)}
+.diario-row{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)}
+.diario-data{font-size:11px;color:var(--text3);min-width:34px;flex-shrink:0}
+.diario-nome{font-size:13px;font-weight:500;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.diario-valor{font-size:13px;font-weight:700;color:var(--success);white-space:nowrap;margin-right:4px}
+.diario-semana-total{padding:9px 14px;background:var(--surface2);font-size:12px;color:var(--text2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.diario-mes-total{padding:12px 14px;background:var(--text);color:var(--bg);font-size:13px;font-family:var(--fh);font-weight:700}
+
 /* DOC */
 #doc-render{position:fixed;left:-9999px;top:0;width:400px;background:#fff}
 .doc-wrap{background:#fff;width:400px;font-family:'DM Sans',sans-serif}
@@ -275,6 +284,7 @@ body{display:flex;flex-direction:column;max-width:480px;margin:0 auto;min-height
   <button class="tab" onclick="trocarTab('nova')">+ Venda</button>
   <button class="tab" onclick="trocarTab('fiado')">Fiado</button>
   <button class="tab" onclick="trocarTab('tabela')">Tabela Preco</button>
+  <button class="tab" onclick="trocarTab('diario')">Diário</button>
   <button class="tab" onclick="trocarTab('vendas')">Vendas</button>
   <button class="tab" onclick="trocarTab('receber')">A Receber</button>
   <button class="tab" onclick="trocarTab('compras')">Compras</button>
@@ -366,6 +376,9 @@ body{display:flex;flex-direction:column;max-width:480px;margin:0 auto;min-height
 
 <!-- FINANCAS -->
 <div class="secao" id="tab-financas"><div id="lista-financas"></div></div>
+
+<!-- DIARIO DE VENDAS -->
+<div class="secao" id="tab-diario"><div id="lista-diario"></div></div>
 
 <!-- TABELA PRECO -->
 <div class="secao" id="tab-tabela">
@@ -511,7 +524,7 @@ function fd(d){if(!d)return'';var p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0]}
 function hoje(){return new Date().toLocaleDateString('pt-BR')}
 function dataHoje(){return new Date().toISOString().split('T')[0]}
 
-var TABS=['clientes','nova','fiado','tabela','vendas','receber','compras','financas','config'];
+var TABS=['clientes','nova','fiado','tabela','diario','vendas','receber','compras','financas','config'];
 function trocarTab(t){
   document.querySelectorAll('.tab').forEach(function(b,i){b.classList.toggle('ativo',TABS[i]===t)});
   document.querySelectorAll('.secao').forEach(function(s){s.classList.remove('ativa')});
@@ -520,6 +533,7 @@ function trocarTab(t){
   if(t==='nova')preencherSelectClientes();
   if(t==='vendas')renderVendas();
   if(t==='tabela')renderTP();
+  if(t==='diario')renderDiario();
   if(t==='receber')renderContasReceber();
   if(t==='compras')renderCompras();
   if(t==='financas')renderFinancas();
@@ -743,6 +757,62 @@ return '<div class="parc-row" id="row-'+v.id+'-'+i+'"><span class="pn">'+p.num+'
     }).join('');
     return '<div class="cli-card"><div class="cli-hdr" data-cid="'+cid+'" onclick="toggleCard(this.dataset.cid)"><div><div class="cli-nome">'+nome+'</div><div class="cli-sub">'+vs.length+' venda'+(vs.length>1?'s':'')+' - '+(quitado?'Tudo pago':m(dev)+' pendente')+'</div></div><div style="display:flex;align-items:center;gap:6px"><span class="badge '+(quitado?'bok':'bdeve')+'">'+(quitado?'Quitado':m(dev))+'</span><span class="chev" id="chev-'+cid+'">&#8250;</span></div></div><div class="cli-body" id="body-'+cid+'">'+vhtml+'</div></div>';
   }).join('');
+}
+
+// DIARIO DE VENDAS
+function renderDiario(){
+  var lista=document.getElementById('lista-diario');
+  if(!vendas.length){lista.innerHTML='<div class="vazio">Nenhuma venda registrada.</div>';return}
+  var MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  var pColors={fiado:'cc-fiad',dinheiro:'cc-din',cartao:'cc-car'};
+  var pLabels={fiado:'Fiado',dinheiro:'Dinheiro',cartao:'Cartão'};
+  function dmStr(ds){if(!ds)return'';var p=ds.split('-');return p[2]+'/'+p[1]}
+  function getMonKey(ds){return ds?ds.substring(0,7):''}
+  function getWkKey(ds){
+    if(!ds)return'';
+    var d=new Date(ds+'T12:00:00');
+    var day=d.getDay();
+    var diff=day===0?6:day-1;
+    d.setDate(d.getDate()-diff);
+    return d.toISOString().split('T')[0];
+  }
+  function getWkSun(monKey){
+    var d=new Date(monKey+'T12:00:00');
+    d.setDate(d.getDate()+6);
+    return d.toISOString().split('T')[0];
+  }
+  var todayWk=getWkKey(dataHoje());
+  var sorted=vendas.slice().sort(function(a,b){return(b.data||'').localeCompare(a.data||'')});
+  var items=[];
+  var curWk=null,curMon=null,wkTotal=0,monTotal=0;
+  function pushWk(){
+    if(!curWk||wkTotal<=0)return;
+    var sun=getWkSun(curWk);
+    var label=curWk===todayWk?'Semana atual':'Semana '+dmStr(curWk)+'–'+dmStr(sun);
+    items.push('<div class="diario-semana-total">'+label+': <b>'+m(wkTotal)+'</b></div>');
+  }
+  function pushMon(){
+    if(!curMon||monTotal<=0)return;
+    var p=curMon.split('-');
+    items.push('<div class="diario-mes-total">Total '+MESES[parseInt(p[1])-1]+' '+p[0]+': '+m(monTotal)+'</div>');
+  }
+  sorted.forEach(function(v){
+    var wk=getWkKey(v.data);
+    var mon=getMonKey(v.data);
+    if(curWk!==null&&wk!==curWk){pushWk();wkTotal=0;}
+    if(curMon!==null&&mon!==curMon){pushMon();monTotal=0;}
+    curWk=wk;curMon=mon;
+    var tp=v.pgto||'fiado';
+    items.push('<div class="diario-row">'+
+      '<span class="diario-data">'+dmStr(v.data)+'</span>'+
+      '<span class="diario-nome">'+v.nome+'</span>'+
+      '<span class="diario-valor">'+m(v.valor)+'</span>'+
+      '<span class="cc-tipo '+(pColors[tp]||'cc-fiad')+'">'+(pLabels[tp]||tp)+'</span>'+
+    '</div>');
+    wkTotal+=v.valor;monTotal+=v.valor;
+  });
+  pushWk();pushMon();
+  lista.innerHTML='<div class="diario-wrap">'+items.join('')+'</div>';
 }
 
 // HISTORICO VENDAS - totalizacao por mes
