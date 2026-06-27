@@ -1082,7 +1082,8 @@ function gerarTabelaVendas(){
   if(!tabelaPreco.length){toast('Nenhum produto cadastrado');return}
   var thSt='padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;border-bottom:2px solid #1a1410;color:#1a1410;white-space:nowrap';
   var tdSt='padding:7px 10px;font-size:13px;border-bottom:1px solid #e8e4dd;vertical-align:middle';
-  var rows=tabelaPreco.map(function(p,i){
+  var lista=tabelaPreco.slice().sort(function(a,b){return a.nome.localeCompare(b.nome,'pt-BR')});
+  var rows=lista.map(function(p,i){
     var mg=p.margem!=null?p.margem:MARGEM_SUGESTAO;
     var c=calcTPprod(p.custo,p.vista,mg);
     var bg=i%2===0?'#fff':'#f7f4ef';
