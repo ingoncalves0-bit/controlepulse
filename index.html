@@ -382,15 +382,9 @@ body{display:flex;flex-direction:column;max-width:480px;margin:0 auto;min-height
 
 <!-- TABELA PRECO -->
 <div class="secao" id="tab-tabela">
-  <div class="fsec">
-    <h3>Configuracao global</h3>
-    <div class="row2">
-      <div class="campo"><label>Margem minima sugerida (%)</label><input type="number" id="cfg-margem" step="0.1" min="0" max="99" inputmode="decimal" oninput="atualizarConfigTP()"></div>
-      <div class="campo"><label>Juros prazo (%/parc)</label><input type="number" id="cfg-taxa" step="0.01" min="0" inputmode="decimal" oninput="atualizarConfigTP()"></div>
-    </div>
-    <div style="font-size:11px;color:var(--text3);margin-top:4px">Margem e sugestao inicial — cada produto pode ter a sua. Juros afeta todos os prazos.</div>
-  </div>
-  <div class="fsec">
+  <button class="btn-reg" onclick="gerarTabelaVendas()" style="margin-bottom:10px;background:var(--info)">Gerar Tabela de Vendas</button>
+  <div id="lista-tp"></div>
+  <div class="fsec" style="margin-top:10px">
     <h3>Novo produto</h3>
     <div class="campo"><label>Nome do produto</label><input type="text" id="tp-nome" placeholder="Ex: Blusa M, Calca Jeans 42..." autocomplete="off"></div>
     <div class="row2">
@@ -398,9 +392,15 @@ body{display:flex;flex-direction:column;max-width:480px;margin:0 auto;min-height
       <div class="campo"><label>Margem (%)</label><input type="number" id="tp-margem-prod" step="0.1" min="0" max="99" inputmode="decimal"></div>
     </div>
     <button class="btn-reg" onclick="adicionarTP()" style="margin-top:10px">Adicionar produto</button>
-    <button class="btn-reg" onclick="gerarTabelaVendas()" style="margin-top:8px;background:var(--info)">Gerar Tabela de Vendas</button>
   </div>
-  <div id="lista-tp"></div>
+  <div class="fsec" style="margin-top:10px">
+    <h3>Configuracao global</h3>
+    <div class="row2">
+      <div class="campo"><label>Margem minima sugerida (%)</label><input type="number" id="cfg-margem" step="0.1" min="0" max="99" inputmode="decimal" oninput="atualizarConfigTP()"></div>
+      <div class="campo"><label>Juros prazo (%/parc)</label><input type="number" id="cfg-taxa" step="0.01" min="0" inputmode="decimal" oninput="atualizarConfigTP()"></div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-top:4px">Margem e sugestao inicial — cada produto pode ter a sua. Juros afeta todos os prazos.</div>
+  </div>
 </div>
 
 <!-- MODAL TABELA VENDAS -->
@@ -1041,7 +1041,8 @@ function renderTP(){
   var lista=document.getElementById('lista-tp');
   if(!tabelaPreco.length){lista.innerHTML='<div class="vazio">Nenhum produto cadastrado.<br>Adicione acima!</div>';return}
   var stIn='width:100%;padding:6px 9px;font-size:14px;font-family:var(--fb);border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);outline:none;-webkit-appearance:none';
-  lista.innerHTML=tabelaPreco.map(function(p){
+  var listaOrdenada=tabelaPreco.slice().sort(function(a,b){return a.nome.localeCompare(b.nome,'pt-BR',{sensitivity:'base'})});
+  lista.innerHTML=listaOrdenada.map(function(p){
     var mg=p.margem!=null?p.margem:MARGEM_SUGESTAO;
     var c=calcTPprod(p.custo,p.vista,mg);
     return '<div class="tp-card" style="flex-direction:column;align-items:stretch;gap:0;padding:0;overflow:hidden">'+
