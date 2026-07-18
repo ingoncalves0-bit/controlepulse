@@ -284,6 +284,7 @@ body{display:flex;flex-direction:column;max-width:480px;margin:0 auto;min-height
   <button class="tab" onclick="trocarTab('nova')">+ Venda</button>
   <button class="tab" onclick="trocarTab('fiado')">Fiado</button>
   <button class="tab" onclick="trocarTab('tabela')">Tabela Preco</button>
+  <button class="tab" onclick="trocarTab('estoque')">Estoque</button>
   <button class="tab" onclick="trocarTab('diario')">Diário</button>
   <button class="tab" onclick="trocarTab('vendas')">Vendas</button>
   <button class="tab" onclick="trocarTab('receber')">A Receber</button>
@@ -403,6 +404,20 @@ body{display:flex;flex-direction:column;max-width:480px;margin:0 auto;min-height
   </div>
 </div>
 
+<!-- ESTOQUE -->
+<div class="secao" id="tab-estoque">
+  <div id="lista-estoque"></div>
+  <div class="fsec" style="margin-top:10px">
+    <h3>Novo produto</h3>
+    <div class="campo"><label>Nome do produto</label><input type="text" id="eq-nome" placeholder="Ex: Moletom P..." autocomplete="off"></div>
+    <div class="row2">
+      <div class="campo"><label>Quantidade</label><input type="number" id="eq-qtd" placeholder="0" min="0" step="1" inputmode="numeric"></div>
+      <div class="campo"><label>Preço (R$)</label><input type="number" id="eq-preco" placeholder="0,00" min="0" step="0.01" inputmode="decimal"></div>
+    </div>
+    <button class="btn-reg" onclick="adicionarEstoque()" style="margin-top:10px">Adicionar produto</button>
+  </div>
+</div>
+
 <!-- MODAL TABELA VENDAS -->
 <div id="modal-tv" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto">
   <div style="background:#fff;border-radius:var(--r);width:100%;max-width:460px;padding:20px;margin:auto">
@@ -463,7 +478,20 @@ body{display:flex;flex-direction:column;max-width:480px;margin:0 auto;min-height
 <div class="toast" id="toast"></div>
 
 <script>
-var vendas=[],contaCorrente=[],clientesCad=[],tabelaPreco=[],compras=[],loja='';
+function estoqueInicial(){return[
+  {id:1,nome:'Cortavento',qtd:9,preco:89},
+  {id:2,nome:'Moletom',qtd:4,preco:89},
+  {id:3,nome:'Camisa simples',qtd:6,preco:30},
+  {id:4,nome:'Overside',qtd:1,preco:80},
+  {id:5,nome:'Camisa brasil',qtd:2,preco:55},
+  {id:6,nome:'Bobajaco brasil',qtd:1,preco:200},
+  {id:7,nome:'Calça moletom',qtd:3,preco:49},
+  {id:8,nome:'Conjunto moletom',qtd:1,preco:120},
+  {id:9,nome:'Térmicas',qtd:3,preco:33},
+  {id:10,nome:'Bonés',qtd:6,preco:30},
+  {id:11,nome:'Touca',qtd:2,preco:15}
+]}
+var vendas=[],contaCorrente=[],clientesCad=[],tabelaPreco=[],compras=[],estoque=estoqueInicial(),loja='';
 var docAtual=null,pgtoAtual='fiado',ccFiltro='todos',vendaFiltro='todos',modalCallback=null;
 
 // Supabase
@@ -477,7 +505,7 @@ async function salvarTudo(){
   try{
     await sb.from('dados').upsert({
       user_id:_uid,
-      payload:{vendas,contaCorrente,clientesCad,tabelaPreco,compras,loja,saldoBanco,MARGEM_SUGESTAO,TAXA_PRAZO}
+      payload:{vendas,contaCorrente,clientesCad,tabelaPreco,compras,estoque,loja,saldoBanco,MARGEM_SUGESTAO,TAXA_PRAZO}
     },{onConflict:'user_id'});
   }catch(e){}
 }
@@ -485,6 +513,7 @@ async function salvarTudo(){
 function salvar(){salvarTudo();atualizarHeader()}
 function salvarCompras(){salvarTudo()}
 function salvarTP(){salvarTudo()}
+function salvarEstoque(){salvarTudo()}
 function salvarClientes(){salvarTudo()}
 function salvarLoja(){loja=document.getElementById('inp-loja').value.trim();salvarTudo()}
 
@@ -499,6 +528,7 @@ async function carregarDados(){
       if(d.clientesCad)clientesCad=d.clientesCad;
       if(d.tabelaPreco)tabelaPreco=d.tabelaPreco;
       if(d.compras)compras=d.compras;
+      if(d.estoque)estoque=d.estoque;
       if(d.loja)loja=d.loja;
       if(d.saldoBanco!=null)saldoBanco=d.saldoBanco;
       if(d.MARGEM_SUGESTAO!=null)MARGEM_SUGESTAO=d.MARGEM_SUGESTAO;
@@ -527,7 +557,7 @@ async function entrar(){
 async function sair(){
   if(!confirm('Sair da conta?'))return;
   await sb.auth.signOut();
-  _uid=null;vendas=[];contaCorrente=[];clientesCad=[];tabelaPreco=[];compras=[];loja='';
+  _uid=null;vendas=[];contaCorrente=[];clientesCad=[];tabelaPreco=[];compras=[];estoque=estoqueInicial();loja='';
   saldoBanco=0;MARGEM_SUGESTAO=40;TAXA_PRAZO=0.05;
   document.getElementById('tela-login').style.display='flex';
 }
@@ -539,7 +569,7 @@ function esc(s){return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'
 function hoje(){return new Date().toLocaleDateString('pt-BR')}
 function dataHoje(){return new Date().toISOString().split('T')[0]}
 
-var TABS=['clientes','nova','fiado','tabela','diario','vendas','receber','compras','financas','config'];
+var TABS=['clientes','nova','fiado','tabela','estoque','diario','vendas','receber','compras','financas','config'];
 function trocarTab(t){
   document.querySelectorAll('.tab').forEach(function(b,i){b.classList.toggle('ativo',TABS[i]===t)});
   document.querySelectorAll('.secao').forEach(function(s){s.classList.remove('ativa')});
@@ -548,6 +578,7 @@ function trocarTab(t){
   if(t==='nova')preencherSelectClientes();
   if(t==='vendas')renderVendas();
   if(t==='tabela')renderTP();
+  if(t==='estoque')renderEstoque();
   if(t==='diario')renderDiario();
   if(t==='receber')renderContasReceber();
   if(t==='compras')renderCompras();
@@ -1159,6 +1190,72 @@ function salvarImagemTV(){
     a.click();
     toast('Imagem salva!');
   });
+}
+
+// ESTOQUE
+function adicionarEstoque(){
+  var nome=document.getElementById('eq-nome').value.trim();
+  var qtd=parseInt(document.getElementById('eq-qtd').value)||0;
+  var preco=parseFloat(document.getElementById('eq-preco').value)||0;
+  if(!nome){toast('Informe o nome do produto');return}
+  estoque.push({id:Date.now(),nome:nome,qtd:qtd,preco:preco});
+  salvarEstoque();
+  document.getElementById('eq-nome').value='';
+  document.getElementById('eq-qtd').value='';
+  document.getElementById('eq-preco').value='';
+  renderEstoque();
+  toast('Produto adicionado!');
+}
+function excluirEstoque(id){
+  if(!confirm('Excluir este produto do estoque?'))return;
+  estoque=estoque.filter(function(x){return x.id!==id});
+  salvarEstoque();renderEstoque();toast('Excluido');
+}
+function salvarEdicaoEstoque(id){
+  var p=estoque.find(function(x){return x.id===id});if(!p)return;
+  var nome=document.getElementById('eq-n-'+id).value.trim();
+  var qtd=parseInt(document.getElementById('eq-q-'+id).value)||0;
+  var preco=parseFloat(document.getElementById('eq-p-'+id).value)||0;
+  if(!nome){toast('Informe o nome do produto');return}
+  p.nome=nome;p.qtd=qtd;p.preco=preco;
+  salvarEstoque();renderEstoque();toast('Salvo!');
+}
+function renderEstoque(){
+  var lista=document.getElementById('lista-estoque');
+  if(!estoque.length){lista.innerHTML='<div class="vazio">Nenhum produto cadastrado.<br>Adicione abaixo!</div>';return}
+  var stIn='width:100%;padding:6px 9px;font-size:14px;font-family:var(--fb);border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);outline:none;-webkit-appearance:none';
+  var listaOrdenada=estoque.slice().sort(function(a,b){return a.nome.localeCompare(b.nome,'pt-BR',{sensitivity:'base'})});
+  var totalGeral=estoque.reduce(function(s,p){return s+p.qtd*p.preco},0);
+  var totalCard='<div style="background:var(--info);border-radius:var(--r);padding:14px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">'+
+    '<div><div style="font-size:10px;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Total em estoque</div>'+
+    '<div style="font-family:var(--fh);font-size:22px;font-weight:800;color:#fff">'+m(totalGeral)+'</div></div>'+
+  '</div>';
+  var cards=listaOrdenada.map(function(p){
+    var gid='eq'+p.id;
+    var subtotal=p.qtd*p.preco;
+    return '<div class="cli-card">'+
+      '<div class="cli-hdr" onclick="toggleCard(\''+gid+'\')">'+
+        '<div><div class="cli-nome">'+esc(p.nome)+'</div>'+
+        '<div class="cli-sub">'+p.qtd+' un &bull; '+m(p.preco)+' cada</div></div>'+
+        '<div style="display:flex;align-items:center;gap:8px">'+
+          '<span style="font-family:var(--fh);font-size:15px;font-weight:800;color:var(--info)">'+m(subtotal)+'</span>'+
+          '<span class="chev" id="chev-'+gid+'">&#8250;</span>'+
+        '</div>'+
+      '</div>'+
+      '<div class="cli-body" id="body-'+gid+'"><div style="padding:14px 15px">'+
+        '<div class="campo"><label>Nome do produto</label><input id="eq-n-'+p.id+'" type="text" value="'+esc(p.nome)+'" style="'+stIn+'"></div>'+
+        '<div class="row2">'+
+          '<div class="campo"><label>Quantidade</label><input id="eq-q-'+p.id+'" type="number" value="'+p.qtd+'" min="0" step="1" inputmode="numeric" style="'+stIn+'"></div>'+
+          '<div class="campo"><label>Preço (R$)</label><input id="eq-p-'+p.id+'" type="number" value="'+p.preco+'" min="0" step="0.01" inputmode="decimal" style="'+stIn+'"></div>'+
+        '</div>'+
+        '<div style="display:flex;gap:8px;margin-top:10px">'+
+          '<button class="btn-reg" onclick="salvarEdicaoEstoque('+p.id+')" style="flex:1">Salvar</button>'+
+          '<button class="btn-estq danger" onclick="excluirEstoque('+p.id+')" style="flex:0 0 auto;padding:9px 14px">Excluir</button>'+
+        '</div>'+
+      '</div></div>'+
+    '</div>';
+  }).join('');
+  lista.innerHTML=totalCard+cards;
 }
 
 // COMPRAS E CONTAS A PAGAR
