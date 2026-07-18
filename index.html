@@ -1286,7 +1286,7 @@ function renderCompras(){
           '</div>'+
           '<div style="display:flex;align-items:center;gap:8px">'+
             '<span style="font-size:14px;font-weight:800;color:var(--danger)">'+m(g.total)+'</span>'+
-            '<button class="btn-parc" onclick="event.stopPropagation();pagarFatura('+JSON.stringify(g.cids)+')" style="font-size:11px;font-weight:700;padding:6px 10px;color:var(--success);white-space:nowrap">✓ Pagar fatura</button>'+
+            '<button class="btn-parc" onclick="event.stopPropagation();pagarFatura('+cidsJson+')" style="font-size:11px;font-weight:700;padding:6px 10px;color:var(--success);white-space:nowrap">✓ Pagar fatura</button>'+
             '<span class="chev" id="chev-'+gid+'">&#8250;</span>'+
           '</div>'+
         '</div>'+
